@@ -1,0 +1,3 @@
+# Group variables for all hosts
+ansible_user: ansible
+ansible_ssh_port: 22

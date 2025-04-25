@@ -1,0 +1,6 @@
+[all:vars]
+ansible_user=ansible
+ansible_port=22
+
+[default]
+localhost ansible_connection=local
