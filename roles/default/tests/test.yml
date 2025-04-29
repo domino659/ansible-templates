@@ -1,5 +1,0 @@
----
-- hosts: localhost
-  remote_user: root
-  roles:
-    - /home/msion/repositories/ansible_debian_setup/ansible_debian_setup/roles/default

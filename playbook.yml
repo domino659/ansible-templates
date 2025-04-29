@@ -1,6 +1,6 @@
 ---
-- name: Run general playbook
+- name: Run playbooks
   hosts: localhost
-  gather_facts: no
+  gather_facts: yes
 
-- import_playbook: playbook/default/playbook.yml
+- import_playbook: playbook/linux/setup_wsl_debian.yml

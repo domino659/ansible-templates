@@ -1,0 +1,11 @@
+---
+- name: Setup WSL Debian
+  hosts: localhost
+  gather_facts: yes
+
+
+  vars_files:
+    - ../../inventory/default/host_vars/localhost.yml
+
+  roles:
+    - { role: debian/update_and_cleanup }

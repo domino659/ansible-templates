@@ -1,2 +1,2 @@
 # Host variables for localhost
-ansible_user: root
+# ansible_user: root
