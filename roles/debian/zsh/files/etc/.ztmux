@@ -1,0 +1,16 @@
+```bash
+super_tmux() {
+    if [ -n "$TMUX" ]
+    then
+        local session_name=$(echo $TMUX | awk -F ',' '{print $1}' | awk -F '/' '{print $NF}')
+        local session_id=$(echo $TMUX | awk -F ',' '{print $2}')
+        ZSH_THEME_TMUX_PROMPT_PREFIX="%F{%(#.red.blue)}─("
+        ZSH_THEME_TMUX_PROMPT_SUFFIX="%F{%(#.red.blue)})"
+        ZSH_TMUX="$session_name $session_id"
+        TMUX_STATUS="$ZSH_THEME_TMUX_PROMPT_PREFIX$ZSH_TMUX$ZSH_THEME_TMUX_PROMPT_SUFFIX"
+    else
+      TMUX_STATUS=""
+    fi
+    echo "$TMUX_STATUS"
+}
+```

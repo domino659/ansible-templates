@@ -1,0 +1,6 @@
+```bash
+if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
+then
+        export PATH="/usr/local/bin:/usr/bin:/bin:/usr/games"
+fi
+```

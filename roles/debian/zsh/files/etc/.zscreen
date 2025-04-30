@@ -1,0 +1,14 @@
+```bash
+super_screen() {
+  ZSH_SCREEN="${STY#[0-9]*.}"
+  if [ ! -z $ZSH_SCREEN ]
+  then
+    ZSH_THEME_SCREEM_PROMPT_PREFIX="%F{%(#.red.blue)}─("
+    ZSH_THEME_SCREEN_PROMPT_SUFFIX="%F{%(#.red.blue)})"
+    SCREEN_STATUS="$ZSH_THEME_SCREEM_PROMPT_PREFIX$ZSH_SCREEN$ZSH_THEME_SCREEN_PROMPT_SUFFIX"
+  else
+    ZSH_SCREEN=""
+  fi
+  echo "$SCREEN_STATUS"
+}
+```

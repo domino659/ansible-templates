@@ -1,0 +1,34 @@
+---
+# tasks file for update_init
+- name: Update force python3 on {{ ansible_hostname }}
+  become: true
+  ansible.builtin.dnf:
+    name: python3
+    state: latest
+    update_only: true
+    allowerasing: true
+
+- name: Upgrade system on {{ ansible_hostname }}
+  become: true
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_only: true
+    update_cache: true
+  register: update_rhel
+
+- name: Check if a reboot is required on {{ ansible_hostname }}
+  ansible.builtin.command: needs-restarting -r
+  register: needs_restart
+  failed_when: false
+  changed_when: false
+
+- name: Reboot or not on {{ ansible_hostname }}
+  ansible.builtin.set_fact:
+    reboot_needed: "{{ needs_restart.rc == 1 }}"
+
+- name: Reboot server on {{ ansible_hostname }}
+  become: true
+  ansible.builtin.reboot:
+    msg: "Reboot {{ ansible_hostname }}"
+  when: reboot_needed

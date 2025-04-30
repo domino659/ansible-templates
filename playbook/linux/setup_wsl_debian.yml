@@ -8,4 +8,6 @@
     - ../../inventory/default/host_vars/localhost.yml
 
   roles:
-    - { role: debian/update_and_cleanup }
+    - { role: debian/update_init }
+    - { role: debian/zsh }
+    - { role: debian/config_shell }

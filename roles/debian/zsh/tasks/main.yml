@@ -1,2 +1,24 @@
 ---
 # tasks file for zsh
+- name: Install zsh
+  apt:
+    name:
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Copy configuration files
+  copy:
+    src: etc/
+    dest: /etc/zsh
+    mode: '0644'
+  become: true
+  
+- name: Copy user configuration files
+  copy:
+    src: home/.zshrc
+    dest: /home/{{ user }}
+    mode: '0644'
