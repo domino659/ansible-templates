@@ -4,7 +4,7 @@
 export ANSIBLE_CALLBACKS_ENABLED=profile_tasks
 #export DOCKER_HOST="tcp://192.168.1.10:2375"
 #export DOCKER_HOST=tcp://192.168.1.3:2376 DOCKER_TLS_VERIFY=1
-# export DOCKER_HOST="unix:///mnt/wsl/shared-docker/docker.sock"
+#export DOCKER_HOST="unix:///mnt/wsl/shared-docker/docker.sock"
 export PATH="$PATH:$HOME/.local/bin"
 
 #export GIT_TRACE_PACKET=0
