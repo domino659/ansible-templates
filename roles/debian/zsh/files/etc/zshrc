@@ -410,7 +410,7 @@ fi
     logview() { ccze -A < $1 | less -R }   # Affiche un fichier log coloré avec less
     logtail() { tail -f $1 | ccze }        # Suit un fichier log en couleur en temps réel
 
-Other prompt
+# Other prompt
     # Charge le script d'intégration Git (prompt, alias, raccourcis, etc.)
     source /etc/zsh/zgit
     # Charge la configuration liée à l'affichage d'informations d'écran (peut inclure screen ou terminfo)
