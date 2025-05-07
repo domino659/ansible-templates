@@ -1,14 +1,26 @@
+# Fonction pour afficher le nom de la session et l’ID TMUX dans le prompt
 super_tmux() {
-    if [ -n "$TMUX" ]
-    then
-        local session_name=$(echo $TMUX | awk -F ',' '{print $1}' | awk -F '/' '{print $NF}')
-        local session_id=$(echo $TMUX | awk -F ',' '{print $2}')
-        ZSH_THEME_TMUX_PROMPT_PREFIX="%F{%(#.red.blue)}─("
-        ZSH_THEME_TMUX_PROMPT_SUFFIX="%F{%(#.red.blue)})"
-        ZSH_TMUX="$session_name $session_id"
-        TMUX_STATUS="$ZSH_THEME_TMUX_PROMPT_PREFIX$ZSH_TMUX$ZSH_THEME_TMUX_PROMPT_SUFFIX"
-    else
-      TMUX_STATUS=""
-    fi
-    echo "$TMUX_STATUS"
+  # Vérifie si l'on est dans une session TMUX
+  if [ -n "$TMUX" ]; then
+
+    # Récupère le nom de session TMUX (à partir de la variable $TMUX)
+    local session_name=$(echo $TMUX | awk -F ',' '{print $1}' | awk -F '/' '{print $NF}')
+
+    # Récupère l’identifiant de session TMUX (après la virgule)
+    local session_id=$(echo $TMUX | awk -F ',' '{print $2}')
+
+    # Définir les préfixes/suffixes colorés pour le prompt (bleu en user normal, rouge en root)
+    ZSH_THEME_TMUX_PROMPT_PREFIX="%F{%(#.red.blue)}─("
+    ZSH_THEME_TMUX_PROMPT_SUFFIX="%F{%(#.red.blue)})"
+
+    # Assemble les infos TMUX
+    ZSH_TMUX="$session_name $session_id"
+    TMUX_STATUS="$ZSH_THEME_TMUX_PROMPT_PREFIX$ZSH_TMUX$ZSH_THEME_TMUX_PROMPT_SUFFIX"
+  else
+    # Si on n’est pas dans une session TMUX
+    TMUX_STATUS=""
+  fi
+
+  # Affiche la chaîne finale à insérer dans le prompt
+  echo "$TMUX_STATUS"
 }

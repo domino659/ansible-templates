@@ -1,4 +1,3 @@
-```python
 #!/usr/bin/env python3
 from __future__ import print_function
 
@@ -8,27 +7,33 @@ import re
 from subprocess import Popen, PIPE, check_output
 
 
+# Retourne le tag s’il existe, sinon le hash court du commit HEAD
 def get_tagname_or_hash():
-    """return tagname if exists else hash"""
-    # get hash
-    hash_cmd = ['git', 'rev-parse', '--short', 'HEAD']
-    hash_ = check_output(hash_cmd).decode('utf-8').strip()
+    try:
+        hash_cmd = ['git', 'rev-parse', '--short', 'HEAD']
+        hash_ = check_output(hash_cmd).decode('utf-8').strip()
+    except Exception:
+        return None
 
-    # get tagname
-    tags_cmd = ['git', 'for-each-ref', '--points-at=HEAD', '--count=2', '--sort=-version:refname', '--format=%(refname:short)', 'refs/tags']
-    tags = check_output(tags_cmd).decode('utf-8').split()
+    try:
+        tags_cmd = [
+            'git', 'for-each-ref', '--points-at=HEAD', '--count=2',
+            '--sort=-version:refname', '--format=%(refname:short)', 'refs/tags'
+        ]
+        tags = check_output(tags_cmd).decode('utf-8').split()
+        if tags:
+            return tags[0] + ('+' if len(tags) > 1 else '')
+    except Exception:
+        pass
 
-    if tags:
-        return tags[0] + ('+' if len(tags) > 1 else '')
-    elif hash_:
-        return hash_
-    return None
+    return hash_ or None
 
-# Re-use method from https://github.com/magicmonty/bash-git-prompt to get stashs count
+
+# Retourne le nombre d’éléments dans le stash local
 def get_stash():
     cmd = Popen(['git', 'rev-parse', '--git-dir'], stdout=PIPE, stderr=PIPE)
-    so, se = cmd.communicate()
-    stash_file = '%s%s' % (so.decode('utf-8').rstrip(), '/logs/refs/stash')
+    so, _ = cmd.communicate()
+    stash_file = '%s/logs/refs/stash' % so.decode('utf-8').rstrip()
 
     try:
         with open(stash_file) as f:
@@ -36,43 +41,45 @@ def get_stash():
     except IOError:
         return 0
 
-# `git status --porcelain --branch` can collect all information
-# branch, remote_branch, untracked, staged, changed, conflicts, ahead, behind
+
+# Exécute `git status` en mode machine-readable
 po = Popen(['git', 'status', '--porcelain', '--branch'], env=dict(os.environ, LANG="C"), stdout=PIPE, stderr=PIPE)
 stdout, sterr = po.communicate()
-if po.returncode != 0:
-    sys.exit(0)  # Not a git repository
 
-# collect git status information
+# Si ce n’est pas un dépôt Git, on quitte silencieusement
+if po.returncode != 0:
+    sys.exit(0)
+
+# Initialisation des compteurs
 untracked, staged, changed, conflicts = [], [], [], []
 ahead, behind = 0, 0
+
+# Analyse ligne par ligne du résultat de git status
 status = [(line[0], line[1], line[2:]) for line in stdout.decode('utf-8').splitlines()]
 for st in status:
+    # Ligne de métadonnées (branche, divergence)
     if st[0] == '#' and st[1] == '#':
         if re.search('Initial commit on', st[2]) or re.search('No commits yet on', st[2]):
             branch = st[2].split(' ')[-1]
-        elif re.search('no branch', st[2]):  # detached status
+        elif re.search('no branch', st[2]):  # HEAD détachée
             branch = get_tagname_or_hash()
         elif len(st[2].strip().split('...')) == 1:
             branch = st[2].strip()
         else:
-            # current and remote branch info
+            # Branche locale + distante avec divergence
             branch, rest = st[2].strip().split('...')
-            if len(rest.split(' ')) == 1:
-                # remote_branch = rest.split(' ')[0]
-                pass
-            else:
-                # ahead or behind
-                divergence = ' '.join(rest.split(' ')[1:])
-                divergence = divergence.lstrip('[').rstrip(']')
+            if len(rest.split(' ')) > 1:
+                divergence = ' '.join(rest.split(' ')[1:]).strip('[]')
                 for div in divergence.split(', '):
                     if 'ahead' in div:
-                        ahead = int(div[len('ahead '):].strip())
+                        ahead = int(div.split(' ')[1])
                     elif 'behind' in div:
-                        behind = int(div[len('behind '):].strip())
+                        behind = int(div.split(' ')[1])
+    # Fichier non suivi
     elif st[0] == '?' and st[1] == '?':
         untracked.append(st)
     else:
+        # Modifications
         if st[1] == 'M':
             changed.append(st)
         if st[0] == 'U':
@@ -80,12 +87,16 @@ for st in status:
         elif st[0] != ' ':
             staged.append(st)
 
+# Compte les stashes
 stashed = get_stash()
+
+# Détermine si l’état du dépôt est "clean"
 if not changed and not staged and not conflicts and not untracked and not stashed:
     clean = 1
 else:
     clean = 0
 
+# Sortie standard (format : branche, ahead, behind, staged, conflits, modifiés, non suivis, stashes, clean)
 out = ' '.join([
     branch,
     str(ahead),
@@ -97,5 +108,6 @@ out = ' '.join([
     str(stashed),
     str(clean)
 ])
+
+# Affiche le résultat (sans retour à la ligne final)
 print(out, end='')
-```
