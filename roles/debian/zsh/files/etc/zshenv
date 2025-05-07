@@ -1,6 +1,6 @@
-```bash
+# Si la variable PATH est vide ou trop restreinte (valeur par défaut minimale),
+# on la remplace par un PATH plus complet incluant /usr/local/bin et /usr/games.
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
 then
         export PATH="/usr/local/bin:/usr/bin:/bin:/usr/games"
 fi
-```

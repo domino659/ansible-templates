@@ -1,5 +1,3 @@
-```bash
-# File to copy to : /etc/zsh or /etc
-
+# Active la configuration globale POSIX (/etc/profile) en mode sh pour compatibilité avec Zsh
+# Cela garantit que les variables d’environnement globales définies pour les shells Bourne sont bien prises en compte
 emulate sh -c '. /etc/profile'
-```

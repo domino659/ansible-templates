@@ -1,5 +1,2 @@
-```bash
-# File to copy to : /etc/zsh or /etc
-
-clear -x  
-```
+# Efface l’écran à la déconnexion du shell, mais conserve l’historique dans le scrollback buffer (si supporté par le terminal)
+clear -x
