@@ -1,0 +1,421 @@
+# /etc/zsh/zshrc: system-wide .zshrc file for zsh(1).
+#
+# This file is sourced only for interactive shells. It
+# should contain commands to set up aliases, functions,
+# options, key bindings, etc.
+#
+# Global Order: zshenv, zprofile, zshrc, zlogin
+
+# Définir la commande de pagination (si non spécifiée)
+READNULLCMD=${PAGER:-/usr/bin/pager}
+
+# An array to note missing features to ease diagnosis in case of problems.
+typeset -ga debian_missing_features
+
+# Configuration des touches si le terminal n'est pas 'emacs' et si certaines conditions sont remplies
+if [[ -z "${DEBIAN_PREVENT_KEYBOARD_CHANGES-}" ]] &&
+   [[ "$TERM" != 'emacs' ]]
+then
+
+    typeset -A key
+    key=(
+        BackSpace  "${terminfo[kbs]}"
+        Home       "${terminfo[khome]}"
+        End        "${terminfo[kend]}"
+        Insert     "${terminfo[kich1]}"
+        Delete     "${terminfo[kdch1]}"
+        Up         "${terminfo[kcuu1]}"
+        Down       "${terminfo[kcud1]}"
+        Left       "${terminfo[kcub1]}"
+        Right      "${terminfo[kcuf1]}"
+        PageUp     "${terminfo[kpp]}"
+        PageDown   "${terminfo[knp]}"
+    )
+    
+    # Fonction pour lier des séquences de touches aux actions
+    function bind2maps () {
+        local i sequence widget
+        local -a maps
+
+        while [[ "$1" != "--" ]]; do
+            maps+=( "$1" )
+            shift
+        done
+        shift
+
+        sequence="${key[$1]}"
+        widget="$2"
+
+        [[ -z "$sequence" ]] && return 1
+
+        for i in "${maps[@]}"; do
+            bindkey -M "$i" "$sequence" "$widget"
+        done
+    }
+
+    # Associer des actions spécifiques aux touches dans différents modes
+    bind2maps emacs             -- BackSpace   backward-delete-char
+    bind2maps       viins       -- BackSpace   vi-backward-delete-char
+    bind2maps             vicmd -- BackSpace   vi-backward-char
+    bind2maps emacs             -- Home        beginning-of-line
+    bind2maps       viins vicmd -- Home        vi-beginning-of-line
+    bind2maps emacs             -- End         end-of-line
+    bind2maps       viins vicmd -- End         vi-end-of-line
+    bind2maps emacs viins       -- Insert      overwrite-mode
+    bind2maps             vicmd -- Insert      vi-insert
+    bind2maps emacs             -- Delete      delete-char
+    bind2maps       viins vicmd -- Delete      vi-delete-char
+    bind2maps emacs viins vicmd -- Up          up-line-or-history
+    bind2maps emacs viins vicmd -- Down        down-line-or-history
+    bind2maps emacs             -- Left        backward-char
+    bind2maps       viins vicmd -- Left        vi-backward-char
+    bind2maps emacs             -- Right       forward-char
+    bind2maps       viins vicmd -- Right       vi-forward-char
+
+    # Make sure the terminal is in application mode, when zle is
+    # active. Only then are the values from $terminfo valid.
+    if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
+        function zle-line-init () {
+            emulate -L zsh
+            printf '%s' ${terminfo[smkx]}
+        }
+        function zle-line-finish () {
+            emulate -L zsh
+            printf '%s' ${terminfo[rmkx]}
+        }
+        zle -N zle-line-init
+        zle -N zle-line-finish
+    else
+        for i in {s,r}mkx; do
+            (( ${+terminfo[$i]} )) || debian_missing_features+=($i)
+        done
+        unset i
+    fi
+
+    unfunction bind2maps
+
+fi # [[ -z "$DEBIAN_PREVENT_KEYBOARD_CHANGES" ]] && [[ "$TERM" != 'emacs' ]]
+
+# Configuration pour le chemin d'accès des commandes sudo
+zstyle ':completion:*:sudo:*' command-path /usr/local/sbin \
+                                           /usr/local/bin  \
+                                           /usr/sbin       \
+                                           /usr/bin        \
+                                           /sbin           \
+                                           /bin            \
+                                           /usr/X11R6/bin
+
+(( ${+aliases[run-help]} )) && unalias run-help
+autoload -Uz run-help
+
+# If you don't want compinit called here, place the line
+# skip_global_compinit=1
+# in your $ZDOTDIR/.zshenv
+if (( ${${(@f)"$(</etc/os-release)"}[(I)ID*=*ubuntu]} )) &&
+   [[ -z "$skip_global_compinit" ]]; then
+  autoload -U compinit
+  compinit
+fi
+
+### End Default
+
+# Aliases
+    # Définit des alias pour des commandes courantes, ajoutant des options par défaut
+    alias ls='ls --tabsize=0 --literal --color=auto --show-control-chars --human-readable --time-style="+%d/%m/%y %H:%M:%S" --group-directories-first'  # Affichage de ls avec plusieurs options utiles
+    alias ll='ls -l'  # alias pour 'ls -l' pour afficher les fichiers avec plus de détails
+    alias la='ls -A'  # alias pour 'ls -A' pour afficher les fichiers, y compris ceux commençant par un point
+    alias l='ls -CF'  # alias pour 'ls -CF' avec une sortie concise
+    alias lla='ls -Al'  # alias pour 'ls -Al' pour afficher tous les fichiers (y compris les fichiers cachés) de manière détaillée
+
+    # Alias pour la gestion des fichiers
+    alias cp='cp --interactive'  # Demande confirmation avant de copier un fichier
+    alias mv='mv --interactive'  # Demande confirmation avant de déplacer un fichier
+    alias rm='rm --interactive'  # Demande confirmation avant de supprimer un fichier
+
+    # Alias pour les commandes de disque
+    alias df='df --human-readable'  # Affiche l'espace disque de manière lisible
+    alias du='du --human-readable'  # Affiche l'utilisation du disque de manière lisible
+
+    # Alias pour naviguer dans les répertoires
+    alias ..='cd ..'  # Retourner au répertoire parent
+    alias s='cd ..'   # Alias pour revenir au répertoire parent
+    alias ...='cd ../..'  # Aller au répertoire grand-parentt
+
+    # Alias pour des commandes terminal
+    alias c='clear -x'  # Effacer l'écran en désactivant le mode "scroll"
+    alias less='less --quiet'  # Lancer 'less' en mode silencieux
+    alias history='history -i 0'  # Désactive les doublons dans l'historique
+
+# Options
+    setopt nobeep              # Désactive le bip sonore
+    setopt autocd              # Permet de changer de répertoire juste en tapant son nom
+    #setopt correct            # Correction automatique des erreurs de commande
+    setopt interactivecomments # Permet d'ajouter des commentaires dans le code interactif
+    setopt magicequalsubst     # Permet l'expansion des fichiers pour des arguments de la forme ‘anything=expression’
+    setopt nonomatch           # Ne pas afficher d'erreur si aucun fichier ne correspond au motif
+    setopt notify              # Affiche immédiatement l'état des tâches en arrière-plan
+    setopt numericglobsort     # Trie les fichiers par ordre numérique lorsqu'il est pertinent
+    setopt promptsubst         # Active la substitution de commandes dans l'invite de commande
+    setopt hist_verify         # Si on utilise '!' pour l'expansion de l'historique, la commande est juste affichée avant exécution
+    setopt clobber             # Utilise >| pour forcer l'écriture dans les fichiers
+    unsetopt hup               # Empêche l'envoi du signal HUP aux tâches en cours à la fermeture du shell
+
+# History
+    HISTFILE=~/.history  # Emplacement du fichier d'historique
+    HISTSIZE=5000        # Taille maximale de l'historique en mémoire
+    SAVEHIST=8000        # Taille maximale de l'historique enregistré
+
+    setopt hist_expire_dups_first    # Supprimer d'abord les doublons lorsque la taille de l'historique dépasse HISTSIZE
+    setopt hist_ignore_dups          # Ignore les doublons dans l'historique
+    setopt hist_ignore_space         # Ignore les commandes qui commencent par un espace dans l'historique
+    setopt hist_verify               # Affiche la commande avec l'expansion d'historique avant de l'exécuter
+    setopt share_history             # Partage l'historique entre plusieurs sessions Zsh
+
+# Bindkey
+    bindkey -e                                      # Utilise les bindings de type Emacs (par défaut), permet d'éditer les lignes avec des raccourcis similaires à Emacs
+
+    # Déplacement au début de ligne (HOME)
+    bindkey '^A'     beginning-of-line              # Ctrl+A : aller au début de la ligne
+    bindkey '^[[1~'  beginning-of-line              # HOME (code de certaines touches en mode VT100/ANSI)
+    bindkey '^[[H'   beginning-of-line              # HOME (autre séquence possible)
+
+    # Déplacement à la fin de ligne (END)
+    bindkey '^E'     end-of-line                    # Ctrl+E : aller à la fin de la ligne
+    bindkey '^[[4~'  end-of-line                    # END (code VT100)
+    bindkey '^[[F'   end-of-line                    # END (autre séquence possible)
+
+    # Suppression de caractère (DEL)
+    bindkey '^D'     delete-char                    # Ctrl+D : supprime le caractère sous le curseur
+    bindkey '^[[3~'  delete-char                    # DEL : touche Suppr
+
+    # Mode insertion (INS)
+    bindkey '^[[2~'  overwrite-mode                 # INS : bascule entre insertion et surécriture (rarement utile en pratique dans zsh)
+
+    # Recherche dans l'historique avec Page Up / Page Down
+    bindkey '^[[5~'  history-search-backward        # PG UP : cherche dans l’historique les commandes commençant par la ligne courante
+    bindkey '^[[6~'  history-search-forward         # PG DOWN : idem mais dans l’autre sens
+
+    # Recherche incrémentale
+    bindkey '^R'     history-incremental-search-backward  # Ctrl+R : recherche incrémentale dans l’historique, caractère par caractère
+
+    # Déplacement mot à mot avec Ctrl+→ / Ctrl+←
+    bindkey '^[[1;5C' forward-word                  # Ctrl+→ : aller au mot suivant
+    bindkey '^[[1;5D' backward-word                 # Ctrl+← : aller au mot précédent
+
+    # Suppression d’un mot complet
+    bindkey '^[[3;5~' kill-word                     # Ctrl+Suppr : supprime le mot suivant
+
+    # Annulation (undo)
+    bindkey '^[[Z' undo                             # Shift+Tab : ici utilisé pour annuler la dernière modification (usage non standard mais possible)
+
+    if [ "$COLORTERM" = "gnome-terminal" ]
+    then
+    bindkey '^[OH' beginning-of-line          # HOME (séquence spécifique de gnome-terminal)
+    bindkey '^[OF' end-of-line                # END (séquence spécifique de gnome-terminal)
+    fi
+
+# Completion
+    # Initialisation de la complétion Zsh
+    autoload -Uz compinit
+
+    # Désactivation du mode de complétion ambiguë
+    unset list_ambiguous  # Schema de complétion C, empêche les suggestions ambiguës
+
+    # Initialisation de la complétion avec un cache pour améliorer la vitesse
+    compinit -d ~/.cache/zcompdump
+
+    # Paramètres de style pour la complétion
+    zstyle ':completion:*:*:*:*:*' menu select  # Affiche un menu interactif de complétion
+    zstyle ':completion:*' auto-description 'specify: %d'  # Affiche une description pour chaque option de complétion
+    zstyle ':completion:*' completer _expand _complete  # Utilise _expand pour l'expansion des variables et _complete pour la complétion
+    zstyle ':completion:*' format 'Completing %d'  # Format du message de complétion
+    zstyle ':completion:*' group-name ''  # Ne groupe pas les éléments de complétion par nom
+    zstyle ':completion:*' list-colors ''  # Désactive la coloration des éléments dans la liste de complétion
+    zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s  # Affiche un message lorsque l'utilisateur peut appuyer sur TAB pour plus de résultats
+    zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Rend la complétion insensible à la casse
+    zstyle ':completion:*' rehash true  # Rafraîchit la liste des commandes de complétion quand nécessaire
+    zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s  # Message pour indiquer la sélection en cours dans le menu
+    zstyle ':completion:*' use-compctl false  # Désactive l'utilisation de `compctl` pour la complétion
+    zstyle ':completion:*' verbose true  # Affiche plus d'informations lors de la complétion
+
+    # Paramétrage de la complétion pour les commandes `kill`
+    zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'  # Affiche les processus en cours avec les informations détaillées pour `kill`
+
+# Enable syntax-highlightings
+    # Activer la coloration syntaxique si le fichier de syntax-highlighting est disponible
+    if [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+        # Inclure le fichier de syntax-highlighting
+        . /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+        # Configurer les surligneurs utilisés pour la syntaxe
+        ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
+
+        # Définir le style de mise en surbrillance pour chaque élément syntaxique
+        ZSH_HIGHLIGHT_STYLES[default]=none                      # Pas de mise en surbrillance par défaut
+        ZSH_HIGHLIGHT_STYLES[unknown-token]=underline           # Mots inconnus sous-lignés
+        ZSH_HIGHLIGHT_STYLES[reserved-word]=fg=cyan,bold        # Mots réservés en cyan, gras
+        ZSH_HIGHLIGHT_STYLES[suffix-alias]=fg=green,underline   # Alias de suffixe en vert, souligné
+        ZSH_HIGHLIGHT_STYLES[global-alias]=fg=green,bold        # Alias globaux en vert, gras
+        ZSH_HIGHLIGHT_STYLES[precommand]=fg=green,underline     # Commande avant la commande principale en vert, souligné
+        ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=blue,bold     # Séparateurs de commandes en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[autodirectory]=fg=green,underline # Dossiers automatiques en vert, souligné
+        ZSH_HIGHLIGHT_STYLES[path]=bold                          # Chemin en gras
+        ZSH_HIGHLIGHT_STYLES[path_pathseparator]=               # Aucun surlignage pour les séparateurs de chemins
+        ZSH_HIGHLIGHT_STYLES[path_prefix_pathseparator]=        # Aucun surlignage pour les préfixes de chemins
+        ZSH_HIGHLIGHT_STYLES[globbing]=fg=blue,bold             # Globbing (recherche de fichiers) en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[history-expansion]=fg=blue,bold    # Expansion d'historique en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[command-substitution]=none         # Substitution de commandes sans mise en surbrillance
+        ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter]=fg=magenta,bold  # Délimiteurs de substitution de commande en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[process-substitution]=none         # Substitution de processus sans surbrillance
+        ZSH_HIGHLIGHT_STYLES[process-substitution-delimiter]=fg=magenta,bold  # Délimiteurs de substitution de processus en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[single-hyphen-option]=fg=green     # Option avec un tiret simple en vert
+        ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=green     # Option avec double tiret en vert
+        ZSH_HIGHLIGHT_STYLES[back-quoted-argument]=none         # Argument entre accents graves sans surbrillance
+        ZSH_HIGHLIGHT_STYLES[back-quoted-argument-delimiter]=fg=blue,bold  # Délimiteurs d'argument entre accents graves en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[single-quoted-argument]=fg=yellow  # Argument entre guillemets simples en jaune
+        ZSH_HIGHLIGHT_STYLES[double-quoted-argument]=fg=yellow  # Argument entre guillemets doubles en jaune
+        ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]=fg=yellow # Argument entre guillemets avec dollar en jaune
+        ZSH_HIGHLIGHT_STYLES[rc-quote]=fg=magenta              # Citations de fichier RC en magenta
+        ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]=fg=magenta,bold  # Argument avec guillemets doubles et dollar en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]=fg=magenta,bold  # Argument entre guillemets doubles inversés en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[back-dollar-quoted-argument]=fg=magenta,bold  # Argument entre guillemets inversés et dollar en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[assign]=none                       # Assignation sans surbrillance
+        ZSH_HIGHLIGHT_STYLES[redirection]=fg=blue,bold          # Redirection en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[comment]=fg=black,bold             # Commentaires en noir, gras
+        ZSH_HIGHLIGHT_STYLES[named-fd]=none                     # Fichiers descriptifs nommés sans surbrillance
+        ZSH_HIGHLIGHT_STYLES[numeric-fd]=none                   # Fichiers descriptifs numériques sans surbrillance
+        ZSH_HIGHLIGHT_STYLES[arg0]=fg=cyan                      # Le premier argument (généralement le nom du script) en cyan
+        ZSH_HIGHLIGHT_STYLES[bracket-error]=fg=red,bold         # Erreurs de parenthèses en rouge, gras
+        ZSH_HIGHLIGHT_STYLES[bracket-level-1]=fg=blue,bold      # Niveau de parenthèses 1 en bleu, gras
+        ZSH_HIGHLIGHT_STYLES[bracket-level-2]=fg=green,bold     # Niveau de parenthèses 2 en vert, gras
+        ZSH_HIGHLIGHT_STYLES[bracket-level-3]=fg=magenta,bold   # Niveau de parenthèses 3 en magenta, gras
+        ZSH_HIGHLIGHT_STYLES[bracket-level-4]=fg=yellow,bold    # Niveau de parenthèses 4 en jaune, gras
+        ZSH_HIGHLIGHT_STYLES[bracket-level-5]=fg=cyan,bold      # Niveau de parenthèses 5 en cyan, gras
+        ZSH_HIGHLIGHT_STYLES[cursor-matchingbracket]=standout   # Parenthèses correspondantes en surbrillance
+    fi
+
+# Enable auto-suggestion
+    if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+        . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+        # change suggestion color
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#999'
+    fi
+
+# Enable command-not-found
+    # Vérifie si le fichier zsh_command_not_found existe dans /etc
+    if [ -f /etc/zsh_command_not_found ]; then
+        # Source le fichier pour activer la gestion des commandes non trouvées
+        # Cela permet d'afficher une suggestion lorsqu'une commande est inconnue
+        . /etc/zsh_command_not_found
+    fi
+
+# Config title on term
+    case "$TERM" in
+        xterm*|rxvt*|Eterm|aterm|kterm|gnome*|alacritty)
+            # Définit le titre de la fenêtre avec utilisateur@machine:chemin
+            TERM_TITLE=$'\e]0;${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%n@%m: %~\a'
+            ;;
+        *)
+            # Ne rien faire pour les autres types de terminaux
+            ;;
+    esac
+
+# Config dir_colors
+    if [ -x /usr/bin/dircolors ]; then
+        if [ -r ~/.dir_colors ]; then
+            # Utiliser le fichier utilisateur si présent
+            eval "`dircolors ~/.dir_colors`"
+        elif [ -r /etc/dir_colors ]; then
+            # Sinon, utiliser le fichier système
+            eval "`dircolors /etc/dir_colors`"
+        else
+            # Fallback : utiliser les couleurs par défaut
+            eval "`dircolors`"
+        fi
+
+        # Correction couleur pour dossiers en 777
+        export LS_COLORS="$LS_COLORS:ow=30;44:"
+
+        # Active la couleur dans diverses commandes
+        alias grep='grep --color=auto'
+        alias fgrep='fgrep --color=auto'
+        alias egrep='egrep --color=auto'
+        alias diff='diff --color=auto'
+        alias ip='ip --color=auto'
+
+        # Améliore l'affichage des pages man avec less
+        export LESS_TERMCAP_mb=$'\E[1;31m'     # début clignotement
+        export LESS_TERMCAP_md=$'\E[1;36m'     # début gras
+        export LESS_TERMCAP_me=$'\E[0m'        # fin gras/clignotement
+        export LESS_TERMCAP_so=$'\E[01;33m'    # début vidéo inversée
+        export LESS_TERMCAP_se=$'\E[0m'        # fin vidéo inversée
+        export LESS_TERMCAP_us=$'\E[1;32m'     # début souligné
+        export LESS_TERMCAP_ue=$'\E[0m'        # fin souligné
+
+        # Utilise $LS_COLORS aussi pour l'autocomplétion zsh
+        zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+        zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+    fi
+
+# # Prompt
+#     VIRTUAL_ENV_DISABLE_PROMPT=1           # Désactive l'affichage par défaut de l'environnement virtuel Python dans le prompt
+#     PROMPT_EOL_MARK=""                     # Supprime le symbole de fin de ligne (par défaut %)
+#     NEWLINE_BEFORE_PROMPT=yes              # Ajoute une ligne vide avant chaque affichage du prompt (plus lisible)
+
+#     # Fonction de configuration du prompt personnalisé
+#     configure_prompt() {
+#         prompt_symbol="󰁥"                 # Symbole du prompt utilisateur standard
+#         [ "$EUID" -eq 0 ] && prompt_symbol=""    # Utilise un autre symbole si l'utilisateur est root
+#         prompt_zone1="(TERRE)─"         # Préfixe personnalisé (zone ou environnement logique)
+
+#         # Définition du prompt principal (gauche), avec infos : venv, git, utilisateur, machine, dossier, heure, etc.
+#         PROMPT=$'%F{%(#.red.blue)}┬─'$prompt_zone1$'${VIRTUAL_ENV:+(󰌠$(basename $VIRTUAL_ENV))─}$(git_super_status)(%B%F{%(#.red.blue)}%n%F{3}'$prompt_symbol$'%B%F{%(#.red.blue)}%m%b%F{%(#.red.blue)})─(%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.red.blue)})\n╰─>(%B%F{33}%*%b%F{%(#.red.blue)})$(super_screen)$(super_tmux) %B%F{%(#.red.blue)}►%b%F{reset} '
+
+#         unset prompt_symbol               # Nettoyage des variables temporaires
+#         unset prompt_zone1
+#     }
+
+#     # Affichage à droite du prompt (RPROMPT) : charge système et RAM
+#     stats="%F{9}[%f\$loadavg %F{154}-%f \$memory%F{9}]%f"
+#     RPS1="$stats%{$reset_color%}"        # RPS1 est le RPROMPT (affiché à droite)
+
+#     # Fonction exécutée avant chaque affichage du prompt
+#     precmd() {
+#         # Affiche le titre de la fenêtre si TERM_TITLE est défini
+#         print -Pnr -- "$TERM_TITLE"
+
+#         # Récupère la charge système (load average)
+#         load=(${$(< /proc/loadavg)})
+#         loadavg="$load[1] $load[2]"
+
+#         # Récupère l’utilisation mémoire en pourcentage
+#         buffer=(${$(free)})
+#         memory="$((100 * $buffer[10] / $buffer[8]))%%"               # RAM utilisée
+#     #    memory="$memory $((100 * $buffer[16] / $buffer[15] ))%%"    # SWAP utilisée (optionnel)
+
+#         # Ajoute une ligne vide avant le prompt (sauf tout premier affichage)
+#         if [ "$NEWLINE_BEFORE_PROMPT" = yes ]; then
+#             if [ -z "$_NEW_LINE_BEFORE_PROMPT" ]; then
+#                 _NEW_LINE_BEFORE_PROMPT=1
+#             else
+#                 print ""
+#             fi
+#         fi
+#     }
+
+# # Load the prompt
+#     configure_prompt
+
+# # Other functions
+#     logview() { ccze -A < $1 | less -R }   # Affiche un fichier log coloré avec less
+#     logtail() { tail -f $1 | ccze }        # Suit un fichier log en couleur en temps réel
+
+# # Other prompt
+#     # Charge le script d'intégration Git (prompt, alias, raccourcis, etc.)
+#     source /etc/zsh/zgit
+#     # Charge la configuration liée à l'affichage d'informations d'écran (peut inclure screen ou terminfo)
+#     source /etc/zsh/zscreen
+#     # Charge la configuration spécifique à tmux (intégration, alias, statut, etc.)
+#     source /etc/zsh/ztmux
+#     # Active l'historique interactif avec FZF (fuzzy finder dans l'historique des commandes)
+#     source /etc/zsh/zsh-fzf-history

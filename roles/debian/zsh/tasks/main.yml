@@ -6,7 +6,13 @@
       - zsh
       - zsh-autosuggestions
       - zsh-syntax-highlighting
+      - command-not-found
     state: present
+    update_cache: yes
+  become: true
+
+- name: Update command-not-found database
+  apt:
     update_cache: yes
   become: true
 
