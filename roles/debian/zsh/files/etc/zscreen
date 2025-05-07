@@ -1,4 +1,3 @@
-```bash
 super_screen() {
   ZSH_SCREEN="${STY#[0-9]*.}"
   if [ ! -z $ZSH_SCREEN ]
@@ -11,4 +10,3 @@ super_screen() {
   fi
   echo "$SCREEN_STATUS"
 }
-```

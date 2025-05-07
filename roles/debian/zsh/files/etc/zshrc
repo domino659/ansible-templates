@@ -357,65 +357,65 @@ fi
         zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
     fi
 
-# # Prompt
-#     VIRTUAL_ENV_DISABLE_PROMPT=1           # Désactive l'affichage par défaut de l'environnement virtuel Python dans le prompt
-#     PROMPT_EOL_MARK=""                     # Supprime le symbole de fin de ligne (par défaut %)
-#     NEWLINE_BEFORE_PROMPT=yes              # Ajoute une ligne vide avant chaque affichage du prompt (plus lisible)
+# Prompt
+    VIRTUAL_ENV_DISABLE_PROMPT=1           # Désactive l'affichage par défaut de l'environnement virtuel Python dans le prompt
+    PROMPT_EOL_MARK=""                     # Supprime le symbole de fin de ligne (par défaut %)
+    NEWLINE_BEFORE_PROMPT=yes              # Ajoute une ligne vide avant chaque affichage du prompt (plus lisible)
 
-#     # Fonction de configuration du prompt personnalisé
-#     configure_prompt() {
-#         prompt_symbol="󰁥"                 # Symbole du prompt utilisateur standard
-#         [ "$EUID" -eq 0 ] && prompt_symbol=""    # Utilise un autre symbole si l'utilisateur est root
-#         prompt_zone1="(TERRE)─"         # Préfixe personnalisé (zone ou environnement logique)
+    # Fonction de configuration du prompt personnalisé
+    configure_prompt() {
+        prompt_symbol="󰁥"                 # Symbole du prompt utilisateur standard
+        [ "$EUID" -eq 0 ] && prompt_symbol=""    # Utilise un autre symbole si l'utilisateur est root
+        prompt_zone1="(TERRE)─"         # Préfixe personnalisé (zone ou environnement logique)
 
-#         # Définition du prompt principal (gauche), avec infos : venv, git, utilisateur, machine, dossier, heure, etc.
-#         PROMPT=$'%F{%(#.red.blue)}┬─'$prompt_zone1$'${VIRTUAL_ENV:+(󰌠$(basename $VIRTUAL_ENV))─}$(git_super_status)(%B%F{%(#.red.blue)}%n%F{3}'$prompt_symbol$'%B%F{%(#.red.blue)}%m%b%F{%(#.red.blue)})─(%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.red.blue)})\n╰─>(%B%F{33}%*%b%F{%(#.red.blue)})$(super_screen)$(super_tmux) %B%F{%(#.red.blue)}►%b%F{reset} '
+        # Définition du prompt principal (gauche), avec infos : venv, git, utilisateur, machine, dossier, heure, etc.
+        PROMPT=$'%F{%(#.red.blue)}┬─'$prompt_zone1$'${VIRTUAL_ENV:+(󰌠$(basename $VIRTUAL_ENV))─}$(git_super_status)(%B%F{%(#.red.blue)}%n%F{3}'$prompt_symbol$'%B%F{%(#.red.blue)}%m%b%F{%(#.red.blue)})─(%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.red.blue)})\n╰─>(%B%F{33}%*%b%F{%(#.red.blue)})$(super_screen)$(super_tmux) %B%F{%(#.red.blue)}►%b%F{reset} '
 
-#         unset prompt_symbol               # Nettoyage des variables temporaires
-#         unset prompt_zone1
-#     }
+        unset prompt_symbol               # Nettoyage des variables temporaires
+        unset prompt_zone1
+    }
 
-#     # Affichage à droite du prompt (RPROMPT) : charge système et RAM
-#     stats="%F{9}[%f\$loadavg %F{154}-%f \$memory%F{9}]%f"
-#     RPS1="$stats%{$reset_color%}"        # RPS1 est le RPROMPT (affiché à droite)
+    # Affichage à droite du prompt (RPROMPT) : charge système et RAM
+    stats="%F{9}[%f\$loadavg %F{154}-%f \$memory%F{9}]%f"
+    RPS1="$stats%{$reset_color%}"        # RPS1 est le RPROMPT (affiché à droite)
 
-#     # Fonction exécutée avant chaque affichage du prompt
-#     precmd() {
-#         # Affiche le titre de la fenêtre si TERM_TITLE est défini
-#         print -Pnr -- "$TERM_TITLE"
+    # Fonction exécutée avant chaque affichage du prompt
+    precmd() {
+        # Affiche le titre de la fenêtre si TERM_TITLE est défini
+        print -Pnr -- "$TERM_TITLE"
 
-#         # Récupère la charge système (load average)
-#         load=(${$(< /proc/loadavg)})
-#         loadavg="$load[1] $load[2]"
+        # Récupère la charge système (load average)
+        load=(${$(< /proc/loadavg)})
+        loadavg="$load[1] $load[2]"
 
-#         # Récupère l’utilisation mémoire en pourcentage
-#         buffer=(${$(free)})
-#         memory="$((100 * $buffer[10] / $buffer[8]))%%"               # RAM utilisée
-#     #    memory="$memory $((100 * $buffer[16] / $buffer[15] ))%%"    # SWAP utilisée (optionnel)
+        # Récupère l’utilisation mémoire en pourcentage
+        buffer=(${$(free)})
+        memory="$((100 * $buffer[10] / $buffer[8]))%%"               # RAM utilisée
+    #    memory="$memory $((100 * $buffer[16] / $buffer[15] ))%%"    # SWAP utilisée (optionnel)
 
-#         # Ajoute une ligne vide avant le prompt (sauf tout premier affichage)
-#         if [ "$NEWLINE_BEFORE_PROMPT" = yes ]; then
-#             if [ -z "$_NEW_LINE_BEFORE_PROMPT" ]; then
-#                 _NEW_LINE_BEFORE_PROMPT=1
-#             else
-#                 print ""
-#             fi
-#         fi
-#     }
+        # Ajoute une ligne vide avant le prompt (sauf tout premier affichage)
+        if [ "$NEWLINE_BEFORE_PROMPT" = yes ]; then
+            if [ -z "$_NEW_LINE_BEFORE_PROMPT" ]; then
+                _NEW_LINE_BEFORE_PROMPT=1
+            else
+                print ""
+            fi
+        fi
+    }
 
-# # Load the prompt
-#     configure_prompt
+# Load the prompt
+    configure_prompt
 
-# # Other functions
-#     logview() { ccze -A < $1 | less -R }   # Affiche un fichier log coloré avec less
-#     logtail() { tail -f $1 | ccze }        # Suit un fichier log en couleur en temps réel
+# Other functions
+    logview() { ccze -A < $1 | less -R }   # Affiche un fichier log coloré avec less
+    logtail() { tail -f $1 | ccze }        # Suit un fichier log en couleur en temps réel
 
-# # Other prompt
-#     # Charge le script d'intégration Git (prompt, alias, raccourcis, etc.)
-#     source /etc/zsh/zgit
-#     # Charge la configuration liée à l'affichage d'informations d'écran (peut inclure screen ou terminfo)
-#     source /etc/zsh/zscreen
-#     # Charge la configuration spécifique à tmux (intégration, alias, statut, etc.)
-#     source /etc/zsh/ztmux
-#     # Active l'historique interactif avec FZF (fuzzy finder dans l'historique des commandes)
-#     source /etc/zsh/zsh-fzf-history
+Other prompt
+    # Charge le script d'intégration Git (prompt, alias, raccourcis, etc.)
+    source /etc/zsh/zgit
+    # Charge la configuration liée à l'affichage d'informations d'écran (peut inclure screen ou terminfo)
+    source /etc/zsh/zscreen
+    # Charge la configuration spécifique à tmux (intégration, alias, statut, etc.)
+    source /etc/zsh/ztmux
+    # Active l'historique interactif avec FZF (fuzzy finder dans l'historique des commandes)
+    source /etc/zsh/zsh-fzf-history

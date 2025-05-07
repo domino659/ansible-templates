@@ -1,4 +1,3 @@
-```bash
 __GIT_PROMPT_DIR="${0:A:h}"
 
 ## Hook function definitions
@@ -94,5 +93,4 @@ ZSH_THEME_GIT_PROMPT_STASHED="%F{94}%{%G%}"
 ZSH_THEME_GIT_PROMPT_CLEAN="%F{92}%{%G%}"
 
 # Set the prompt.
-#RPROMPT='$(git_super_status)'
-```
+RPROMPT='$(git_super_status)'
